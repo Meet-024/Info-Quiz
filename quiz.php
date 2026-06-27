@@ -27,10 +27,8 @@ $stmt = $pdo->query($query);
 $quizzes = $stmt->fetchAll();
 ?>
 
-<div class="main-container">
-    <?php require_once 'includes/sidebar.php'; ?>
-
-    <div class="content-area animate-fade-in">
+<div class="main-container" style="justify-content: center;">
+    <div class="content-area animate-fade-in" style="width: 100%;">
         <h2>Available Quizzes</h2>
         <p class="card-meta mb-4">Select a topic to filter quizzes. Click "Take Quiz" to start.</p>
 
