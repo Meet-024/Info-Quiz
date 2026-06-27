@@ -38,8 +38,9 @@
                     'manage_users.php' => 'Students'
                 ];
             } elseif (hasRole('student')) {
-                 $links = [
+                $links = [
                     'student_dashboard.php' => 'Dashboard',
+                    'student_dashboard.php?view=results' => 'Results',
                     'info.php' => 'Learn',
                     'quiz.php' => 'Take Quiz'
                 ];
@@ -47,7 +48,29 @@
         }
 
         foreach ($links as $url => $label) {
-            $activeClass = ($current_page == parse_url($url, PHP_URL_PATH)) ? 'active' : '';
+            $url_path = parse_url($url, PHP_URL_PATH);
+            $url_query = parse_url($url, PHP_URL_QUERY);
+            
+            $activeClass = '';
+            if ($current_page == $url_path) {
+                if ($url_query) {
+                    parse_str($url_query, $query_params);
+                    $matches = true;
+                    foreach ($query_params as $key => $val) {
+                        if (!isset($_GET[$key]) || $_GET[$key] != $val) {
+                            $matches = false;
+                            break;
+                        }
+                    }
+                    if ($matches) {
+                        $activeClass = 'active';
+                    }
+                } else {
+                    if (empty($_GET) || (isset($_GET['view']) && $_GET['view'] === 'overview')) {
+                        $activeClass = 'active';
+                    }
+                }
+            }
             echo "<li><a href='$url' class='$activeClass'>$label</a></li>";
         }
         ?>

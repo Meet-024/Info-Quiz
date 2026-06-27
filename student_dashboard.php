@@ -20,15 +20,23 @@ if ($view === 'results') {
     $results = $stmt->fetchAll();
 } elseif ($view === 'info') {
     $topic_id = isset($_GET['topic']) ? (int)$_GET['topic'] : 0;
+    $selected_topic = null;
     $info_items = [];
     if ($topic_id > 0) {
-        $query = "SELECT i.*, t.title as topic_title, u.username as author FROM information i 
-                  LEFT JOIN topics t ON i.topic_id = t.id 
-                  LEFT JOIN users u ON i.created_by = u.id
-                  WHERE i.topic_id = " . $topic_id . "
-                  ORDER BY i.created_at DESC";
-        $stmt = $pdo->query($query);
-        $info_items = $stmt->fetchAll();
+        // Fetch topic details
+        $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = ?");
+        $stmt->execute([$topic_id]);
+        $selected_topic = $stmt->fetch();
+
+        if ($selected_topic) {
+            // Fetch articles for this topic
+            $stmt = $pdo->prepare("SELECT i.*, u.username as author FROM information i 
+                                   LEFT JOIN users u ON i.created_by = u.id
+                                   WHERE i.topic_id = ?
+                                   ORDER BY i.created_at DESC");
+            $stmt->execute([$topic_id]);
+            $info_items = $stmt->fetchAll();
+        }
     }
 } elseif ($view === 'overview') {
     // Overview Stats
@@ -42,21 +50,18 @@ if ($view === 'results') {
     $avg_score = $scores['avg_score'] ? round($scores['avg_score'], 1) : 0;
     $max_score = $scores['max_score'] ? round($scores['max_score'], 1) : 0;
 
-    // Recent Information
-    $stmt = $pdo->query("SELECT i.*, t.title as topic_title FROM information i 
-                         LEFT JOIN topics t ON i.topic_id = t.id 
-                         ORDER BY i.created_at DESC LIMIT 3");
-    $recent_infos = $stmt->fetchAll();
+    // Fetch All Topics
+    $all_topics = $pdo->query("SELECT * FROM topics ORDER BY title ASC")->fetchAll();
 
-    // Recent Quizzes with personal best score for current student
+    // Fetch All Quizzes with question count and student's personal best score
     $stmt = $pdo->prepare("SELECT q.*, t.title as topic_title, 
                           (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
                           (SELECT MAX(score/total_questions * 100) FROM quiz_results WHERE user_id = ? AND quiz_id = q.id) as best_score
                           FROM quizzes q 
                           LEFT JOIN topics t ON q.topic_id = t.id 
-                          ORDER BY q.created_at DESC LIMIT 3");
+                          ORDER BY q.title ASC");
     $stmt->execute([$user_id]);
-    $recent_quizzes = $stmt->fetchAll();
+    $all_quizzes = $stmt->fetchAll();
 
     // Recent attempts log
     $stmt = $pdo->prepare("SELECT r.*, q.title as quiz_title, t.title as topic_title 
@@ -64,16 +69,14 @@ if ($view === 'results') {
                            JOIN quizzes q ON r.quiz_id = q.id
                            LEFT JOIN topics t ON q.topic_id = t.id
                            WHERE r.user_id = ? 
-                           ORDER BY r.created_at DESC LIMIT 3");
+                           ORDER BY r.created_at DESC LIMIT 5");
     $stmt->execute([$user_id]);
     $recent_attempts = $stmt->fetchAll();
 }
 ?>
 
-<div class="main-container">
-    <?php require_once 'includes/sidebar.php'; ?>
-    
-    <div class="content-area animate-fade-in">
+<div class="main-container" style="justify-content: center; max-width: 1200px;">
+    <div class="content-area animate-fade-in" style="width: 100%;">
         <?php if ($view === 'overview'): ?>
             <!-- Personalized Greeting Banner -->
             <div class="glass-panel" style="padding: 2rem; margin-bottom: 2rem; background: linear-gradient(135deg, rgba(212, 175, 55, 0.07) 0%, rgba(21, 21, 21, 0.8) 100%); position: relative; overflow: hidden; border-left: 5px solid var(--gold-primary);">
@@ -93,7 +96,7 @@ if ($view === 'results') {
                 </p>
             </div>
 
-            <div class="card-grid" style="margin-bottom: 2rem;">
+            <div class="card-grid" style="margin-bottom: 3rem;">
                 <!-- Quizzes Taken Card -->
                 <div class="stat-card" style="display: flex; align-items: center; justify-content: space-between; text-align: left; padding: 1.5rem 2rem;">
                     <div>
@@ -129,80 +132,67 @@ if ($view === 'results') {
                 </div>
             </div>
 
-            <!-- Content Grid Section -->
-            <div class="charts-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 2rem; margin-top: 2rem;">
-                <!-- Recent Information Section -->
-                <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <h3 style="color: var(--gold-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; font-size: 1.2rem;">
-                            <i class="fas fa-book-open" style="margin-right: 0.5rem;"></i> Recent Information
-                        </h3>
-                        <?php if (count($recent_infos) > 0): ?>
-                            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                <?php foreach ($recent_infos as $info_item): ?>
-                                    <?php 
-                                        $word_count = str_word_count(strip_tags($info_item['content']));
-                                        $read_time = ceil($word_count / 150); // estimation at 150 wpm
-                                    ?>
-                                    <div style="background: rgba(0, 0, 0, 0.2); padding: 1.2rem; border-radius: var(--radius-sm); border-left: 3px solid var(--gold-primary); transition: transform var(--transition-fast);" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
-                                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.25rem;">
-                                            <div class="card-meta" style="margin-bottom: 0; font-size: 0.75rem;">Topic: <?php echo htmlspecialchars($info_item['topic_title'] ?? 'Uncategorized'); ?></div>
-                                            <span style="font-size: 0.7rem; color: var(--text-muted);"><i class="far fa-clock"></i> <?php echo $read_time; ?> min read</span>
-                                        </div>
-                                        <h4 style="margin-bottom: 0.5rem; font-size: 1rem; color: var(--text-main);"><?php echo htmlspecialchars($info_item['title']); ?></h4>
-                                        <p style="font-size: 0.85rem; color: var(--text-muted); line-height: 1.4; margin-bottom: 0;">
-                                            <?php echo htmlspecialchars(substr($info_item['content'], 0, 110)) . (strlen($info_item['content']) > 110 ? '...' : ''); ?>
-                                        </p>
-                                    </div>
-                                <?php endforeach; ?>
-                            </div>
-                        <?php else: ?>
-                            <p style="color: var(--text-muted); font-size: 0.9rem;">No information articles found.</p>
-                        <?php endif; ?>
+            <!-- Browse Topics Cards Section -->
+            <div style="margin-bottom: 3rem;">
+                <h3 style="color: var(--gold-primary); margin-bottom: 1.5rem; font-size: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <i class="fas fa-book-reader" style="margin-right: 0.5rem;"></i> Browse Learning Topics
+                </h3>
+                <?php if (count($all_topics) > 0): ?>
+                    <div class="card-grid">
+                        <?php foreach ($all_topics as $topic): ?>
+                            <a href="student_dashboard.php?view=info&topic=<?php echo $topic['id']; ?>" class="card" style="text-decoration: none; color: inherit; transition: transform var(--transition-fast), border-color var(--transition-fast);">
+                                <h4 style="color: var(--gold-secondary); margin-bottom: 0.75rem; font-size: 1.2rem;"><?php echo htmlspecialchars($topic['title']); ?></h4>
+                                <p style="color: var(--text-muted); font-size: 0.9rem; line-height: 1.5; margin-bottom: 0;">
+                                    <?php echo htmlspecialchars($topic['description']); ?>
+                                </p>
+                                <span style="display: inline-block; margin-top: 1.5rem; font-size: 0.85rem; color: var(--gold-primary); font-weight: 600;">
+                                    Start Learning <i class="fas fa-chevron-right" style="margin-left: 5px; font-size: 0.75rem;"></i>
+                                </span>
+                            </a>
+                        <?php endforeach; ?>
                     </div>
-                    <div style="margin-top: 1.5rem; text-align: right;">
-                        <a href="info.php" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.5rem 1rem;">View All Information</a>
-                    </div>
-                </div>
+                <?php else: ?>
+                    <p style="color: var(--text-muted);">No learning topics available at the moment.</p>
+                <?php endif; ?>
+            </div>
 
-                <!-- Recent Quizzes Section -->
-                <div class="glass-panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-                    <div>
-                        <h3 style="color: var(--gold-secondary); border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem; margin-bottom: 1.5rem; font-size: 1.2rem;">
-                            <i class="fas fa-tasks" style="margin-right: 0.5rem;"></i> Recent Quizzes
-                        </h3>
-                        <?php if (count($recent_quizzes) > 0): ?>
-                            <div style="display: flex; flex-direction: column; gap: 1rem;">
-                                <?php foreach ($recent_quizzes as $quiz_item): ?>
-                                    <div style="background: rgba(0, 0, 0, 0.2); padding: 1.2rem; border-radius: var(--radius-sm); border-left: 3px solid var(--gold-primary); display: flex; justify-content: space-between; align-items: center; transition: transform var(--transition-fast);" onmouseover="this.style.transform='translateX(4px)'" onmouseout="this.style.transform='none'">
-                                        <div style="min-width: 0; flex: 1; padding-right: 1rem;">
-                                            <div class="card-meta" style="margin-bottom: 0.25rem; font-size: 0.75rem;">Topic: <?php echo htmlspecialchars($quiz_item['topic_title'] ?? 'Uncategorized'); ?></div>
-                                            <h4 style="margin-bottom: 0.25rem; font-size: 1rem; color: var(--text-main); text-overflow: ellipsis; overflow: hidden; white-space: nowrap;"><?php echo htmlspecialchars($quiz_item['title']); ?></h4>
-                                            <div style="display: flex; align-items: center; gap: 0.5rem;">
-                                                <span class="badge badge-student" style="font-size: 0.7rem; padding: 0.15rem 0.5rem;"><?php echo $quiz_item['question_count']; ?> Qs</span>
-                                                <?php if ($quiz_item['best_score'] !== null): ?>
-                                                    <span class="badge" style="background: rgba(46, 213, 115, 0.2); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.4); font-size: 0.7rem; padding: 0.15rem 0.5rem;">Best: <?php echo round($quiz_item['best_score']); ?>%</span>
-                                                <?php else: ?>
-                                                    <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; padding: 0.15rem 0.5rem;">Not Taken</span>
-                                                <?php endif; ?>
-                                            </div>
-                                        </div>
-                                        <?php if ($quiz_item['question_count'] > 0): ?>
-                                            <a href="quiz_take.php?id=<?php echo $quiz_item['id']; ?>" class="btn btn-primary" style="font-size: 0.8rem; padding: 0.4rem 0.8rem; flex-shrink: 0;">Take Quiz</a>
+            <!-- Browse Quizzes Cards Section -->
+            <div style="margin-bottom: 3rem;">
+                <h3 style="color: var(--gold-primary); margin-bottom: 1.5rem; font-size: 1.5rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                    <i class="fas fa-tasks" style="margin-right: 0.5rem;"></i> Available Quizzes
+                </h3>
+                <?php if (count($all_quizzes) > 0): ?>
+                    <div class="card-grid">
+                        <?php foreach ($all_quizzes as $quiz): ?>
+                            <div class="card" style="justify-content: space-between; min-height: 220px;">
+                                <div>
+                                    <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem; gap: 10px;">
+                                        <span class="badge badge-student" style="font-size: 0.7rem; padding: 0.2rem 0.5rem;"><?php echo htmlspecialchars($quiz['topic_title'] ?? 'General'); ?></span>
+                                        <?php if ($quiz['best_score'] !== null): ?>
+                                            <span class="badge" style="background: rgba(46, 213, 115, 0.15); color: var(--success); border: 1px solid rgba(46, 213, 115, 0.3); font-size: 0.7rem; padding: 0.2rem 0.5rem;">Best: <?php echo round($quiz['best_score']); ?>%</span>
                                         <?php else: ?>
-                                            <span class="badge badge-admin" style="font-size: 0.7rem; flex-shrink: 0;">Empty</span>
+                                            <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: var(--text-muted); border: 1px solid rgba(255,255,255,0.1); font-size: 0.7rem; padding: 0.2rem 0.5rem;">Not Attempted</span>
                                         <?php endif; ?>
                                     </div>
-                                <?php endforeach; ?>
+                                    <h4 style="color: var(--text-main); margin-bottom: 0.5rem; font-size: 1.25rem;"><?php echo htmlspecialchars($quiz['title']); ?></h4>
+                                    <p style="color: var(--text-muted); font-size: 0.85rem; line-height: 1.4; margin-bottom: 1.5rem;">
+                                        <?php echo htmlspecialchars($quiz['description']); ?>
+                                    </p>
+                                </div>
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+                                    <span style="font-size: 0.85rem; color: var(--text-muted);"><i class="fas fa-file-alt"></i> <?php echo $quiz['question_count']; ?> Questions</span>
+                                    <?php if ($quiz['question_count'] > 0): ?>
+                                        <a href="quiz_take.php?id=<?php echo $quiz['id']; ?>" class="btn btn-primary" style="padding: 0.5rem 1rem; font-size: 0.85rem;">Attempt Quiz</a>
+                                    <?php else: ?>
+                                        <span class="badge badge-admin" style="font-size: 0.7rem;">Empty</span>
+                                    <?php endif; ?>
+                                </div>
                             </div>
-                        <?php else: ?>
-                            <p style="color: var(--text-muted); font-size: 0.9rem;">No quizzes available.</p>
-                        <?php endif; ?>
+                        <?php endforeach; ?>
                     </div>
-                    <div style="margin-top: 1.5rem; text-align: right;">
-                        <a href="quiz.php" class="btn btn-outline" style="font-size: 0.85rem; padding: 0.5rem 1rem;">View All Quizzes</a>
-                    </div>
-                </div>
+                <?php else: ?>
+                    <p style="color: var(--text-muted);">No quizzes available at the moment.</p>
+                <?php endif; ?>
             </div>
 
             <!-- Recent Quiz Attempts Table -->
@@ -246,16 +236,10 @@ if ($view === 'results') {
                     </div>
                 <?php else: ?>
                     <div style="padding: 1.5rem; text-align: center; color: var(--text-muted);">
-                        You haven't attempted any quizzes yet. <a href="quiz.php" style="color: var(--gold-secondary); text-decoration: underline;">Take your first quiz!</a>
+                        You haven't attempted any quizzes yet.
                     </div>
                 <?php endif; ?>
             </div>
-
-            <?php if ($total_quizzes == 0): ?>
-                <div class="alert alert-success" style="margin-top: 2rem;">
-                    <span><i class="fas fa-info-circle"></i> You haven't taken any quizzes yet. Start learning and test your knowledge!</span>
-                </div>
-            <?php endif; ?>
 
         <?php elseif ($view === 'results'): ?>
             <h2 style="color: var(--gold-primary); margin-bottom: 1rem;">My Quiz Results</h2>
@@ -294,34 +278,62 @@ if ($view === 'results') {
                 <?php else: ?>
                     <div style="padding: 2rem; text-align: center;">
                         <p style="color: var(--text-muted); margin-bottom: 1rem;">You haven't taken any quizzes yet.</p>
-                        <a href="quiz.php" class="btn btn-primary">Browse Quizzes</a>
+                        <a href="student_dashboard.php" class="btn btn-primary">Browse Quizzes & Topics</a>
                     </div>
                 <?php endif; ?>
             </div>
-        <?php elseif ($view === 'info'): ?>
-            <h2 style="color: var(--gold-primary); margin-bottom: 0.5rem;">Information Feed</h2>
-            <p class="card-meta">Select a topic from the sidebar to view detailed information.</p>
-            
-            <?php if ($topic_id == 0): ?>
-                <div class="alert alert-success" style="margin-top: 2rem;">
-                    <span><i class="fas fa-info-circle"></i> Please select a topic from the sidebar to begin learning.</span>
-                </div>
-            <?php elseif (count($info_items) > 0): ?>
-                <div style="display: flex; flex-direction: column; gap: 2rem; margin-top: 2rem;">
-                    <?php foreach ($info_items as $item): ?>
-                        <div class="glass-panel">
-                            <div class="card-meta">Topic: <?php echo htmlspecialchars($item['topic_title'] ?? 'Uncategorized'); ?></div>
-                            <h3 style="color: var(--gold-primary); margin-bottom: 1rem;"><?php echo htmlspecialchars($item['title']); ?></h3>
 
-                            <div class="article-content">
-                                <?php echo nl2br(htmlspecialchars($item['content'])); ?>
-                            </div>
+        <?php elseif ($view === 'info'): ?>
+            <?php if ($selected_topic): ?>
+                <!-- Navigation Sub-header / Back Button -->
+                <div style="margin-bottom: 2rem; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem;">
+                    <a href="student_dashboard.php" class="btn btn-outline" style="padding: 0.5rem 1.25rem; font-size: 0.9rem;">
+                        <i class="fas fa-arrow-left"></i> Back to Dashboard
+                    </a>
+                    
+                    <!-- Quick Topic Swapper Tabs -->
+                    <?php
+                    $other_topics = $pdo->query("SELECT id, title FROM topics ORDER BY title ASC")->fetchAll();
+                    if (count($other_topics) > 1):
+                    ?>
+                        <div style="display: flex; gap: 0.5rem; flex-wrap: wrap; background: rgba(0,0,0,0.2); padding: 0.3rem; border-radius: var(--radius-sm); border: 1px solid var(--border-color);">
+                            <?php foreach ($other_topics as $ot): ?>
+                                <a href="student_dashboard.php?view=info&topic=<?php echo $ot['id']; ?>" 
+                                   class="btn" 
+                                   style="padding: 0.4rem 0.8rem; font-size: 0.8rem; background: <?php echo $ot['id'] == $topic_id ? 'var(--gold-primary)' : 'transparent'; ?>; color: <?php echo $ot['id'] == $topic_id ? 'var(--bg-dark)' : 'var(--text-main)'; ?>; border-radius: 4px;">
+                                    <?php echo htmlspecialchars($ot['title']); ?>
+                                </a>
+                            <?php endforeach; ?>
                         </div>
-                    <?php endforeach; ?>
+                    <?php endif; ?>
                 </div>
+
+                <div class="glass-panel" style="margin-bottom: 2rem; border-left: 5px solid var(--gold-primary);">
+                    <h2 style="color: var(--gold-secondary); margin-bottom: 0.5rem; font-size: 1.8rem;"><?php echo htmlspecialchars($selected_topic['title']); ?></h2>
+                    <p style="color: var(--text-muted); font-size: 1rem; margin: 0; line-height: 1.5;"><?php echo htmlspecialchars($selected_topic['description']); ?></p>
+                </div>
+
+                <?php if (count($info_items) > 0): ?>
+                    <div style="display: flex; flex-direction: column; gap: 2rem;">
+                        <?php foreach ($info_items as $item): ?>
+                            <div class="glass-panel">
+                                <h3 style="color: var(--gold-primary); margin-bottom: 1.5rem; font-size: 1.4rem; border-bottom: 1px solid var(--border-color); padding-bottom: 0.5rem;">
+                                    <?php echo htmlspecialchars($item['title']); ?>
+                                </h3>
+                                <div class="article-content">
+                                    <?php echo nl2br(htmlspecialchars($item['content'])); ?>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php else: ?>
+                    <div class="alert alert-danger" style="margin-top: 2rem;">
+                        <span><i class="fas fa-exclamation-circle"></i> No learning articles found for this topic.</span>
+                    </div>
+                <?php endif; ?>
             <?php else: ?>
                 <div class="alert alert-danger" style="margin-top: 2rem;">
-                    <span><i class="fas fa-exclamation-circle"></i> No information articles found for this topic.</span>
+                    <span><i class="fas fa-exclamation-circle"></i> Topic not found. <a href="student_dashboard.php" style="color: var(--gold-secondary); text-decoration: underline;">Return to Dashboard</a></span>
                 </div>
             <?php endif; ?>
         <?php endif; ?>
