@@ -234,7 +234,7 @@ $recentQuizzes = $stmt->fetchAll();
         <p style="text-align: center; color: var(--text-muted); font-size: 1.05rem; margin-bottom: 3rem;">Jump right into the latest additions to test your skills.</p>
         <div class="card-grid" style="gap: 1.5rem;">
             <?php foreach ($recentQuizzes as $quiz): ?>
-                <div class="card" style="background: var(--bg-card); border-radius: var(--radius-md); border-color: rgba(212, 175, 55, 0.15);">
+                <div class="card" style="background: var(--bg-card); border-radius: var(--radius-md); border-color: rgba(212, 175, 55, 0.15); text-align: center;">
                     <div class="card-meta" style="color: var(--gold-primary); font-weight: 600; font-size: 0.8rem;"><?php echo htmlspecialchars($quiz['topic_title'] ?? 'General'); ?></div>
                     <h3 class="card-title" style="margin-top: 0.25rem; font-size: 1.3rem;"><?php echo htmlspecialchars($quiz['title']); ?></h3>
                     <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.75rem; flex-grow: 1; line-height: 1.5;">
