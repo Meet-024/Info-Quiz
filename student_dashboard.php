@@ -75,7 +75,7 @@ if ($view === 'results') {
 }
 ?>
 
-<div class="main-container" style="justify-content: center; max-width: 1200px;">
+<div class="main-container" style="justify-content: center;">
     <div class="content-area animate-fade-in" style="width: 100%;">
         <?php if ($view === 'overview'): ?>
             <!-- Personalized Greeting Banner -->
