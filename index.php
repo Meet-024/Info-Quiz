@@ -194,8 +194,7 @@ $recentArticles = $stmt->fetchAll();
     <div style="width: 100%; margin-bottom: 2rem;">
         <h2 style="text-align: center; margin-bottom: 0.5rem; font-size: 2rem;">Explore the Platform Features</h2>
         <p style="text-align: center; color: var(--text-muted); font-size: 1.05rem; margin-bottom: 3rem;">Designed to give you a modern, structured learning and assessment environment.</p>
-        
-        <div class="card-grid" style="gap: 1.5rem;">
+        <div class="card-grid" style="gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(300px, 420px)); justify-content: center;">
             <div class="card feature-card">
                 <div class="feature-icon-wrapper">
                     <i class="fas fa-book"></i>
