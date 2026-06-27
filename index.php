@@ -26,9 +26,13 @@ $totalQuizzes = $stmt->fetchColumn();
 $stmt = $pdo->query("SELECT COUNT(*) FROM information");
 $totalInfo = $stmt->fetchColumn();
 
-// Fetch 3 recent quizzes
-$stmt = $pdo->query("SELECT q.*, t.title as topic_title FROM quizzes q LEFT JOIN topics t ON q.topic_id = t.id ORDER BY q.created_at DESC LIMIT 3");
+// Fetch 4 recent quizzes
+$stmt = $pdo->query("SELECT q.*, t.title as topic_title FROM quizzes q LEFT JOIN topics t ON q.topic_id = t.id ORDER BY q.created_at DESC LIMIT 4");
 $recentQuizzes = $stmt->fetchAll();
+
+// Fetch 4 recent learning articles (content)
+$stmt = $pdo->query("SELECT i.*, t.title as topic_title FROM information i LEFT JOIN topics t ON i.topic_id = t.id ORDER BY i.created_at DESC LIMIT 4");
+$recentArticles = $stmt->fetchAll();
 ?>
 
 <style>
@@ -227,12 +231,35 @@ $recentQuizzes = $stmt->fetchAll();
     <!-- Section Divider -->
     <div class="section-divider"></div>
 
+    <!-- Recently Added Articles (Content) Section -->
+    <?php if (count($recentArticles) > 0): ?>
+    <div style="width: 100%; margin-bottom: 2rem;">
+        <h2 style="text-align: center; margin-bottom: 0.5rem; font-size: 2rem;">Recently Added Articles</h2>
+        <p style="text-align: center; color: var(--text-muted); font-size: 1.05rem; margin-bottom: 3rem;">Explore the latest curated educational content.</p>
+        <div class="card-grid" style="gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
+            <?php foreach ($recentArticles as $art): ?>
+                <div class="card" style="background: var(--bg-card); border-radius: var(--radius-md); border-color: rgba(212, 175, 55, 0.15); text-align: center;">
+                    <div class="card-meta" style="color: var(--gold-primary); font-weight: 600; font-size: 0.8rem;"><?php echo htmlspecialchars($art['topic_title'] ?? 'General'); ?></div>
+                    <h3 class="card-title" style="margin-top: 0.25rem; font-size: 1.3rem;"><?php echo htmlspecialchars($art['title']); ?></h3>
+                    <p style="color: var(--text-muted); font-size: 0.95rem; margin-bottom: 1.75rem; flex-grow: 1; line-height: 1.5;">
+                        <?php echo htmlspecialchars(substr(strip_tags($art['content']), 0, 95)) . '...'; ?>
+                    </p>
+                    <a href="info.php?topic=<?php echo $art['topic_id']; ?>" class="btn btn-outline" style="width: 100%; justify-content: center; padding: 0.75rem;">Read Article <i class="fas fa-book-open" style="font-size: 0.8rem; margin-left: 5px;"></i></a>
+                </div>
+            <?php endforeach; ?>
+        </div>
+    </div>
+    <?php endif; ?>
+
+    <!-- Section Divider -->
+    <div class="section-divider"></div>
+
     <!-- Recent Quizzes Section -->
     <?php if (count($recentQuizzes) > 0): ?>
     <div style="width: 100%; margin-bottom: 4rem;">
         <h2 style="text-align: center; margin-bottom: 0.5rem; font-size: 2rem;">Recently Added Quizzes</h2>
         <p style="text-align: center; color: var(--text-muted); font-size: 1.05rem; margin-bottom: 3rem;">Jump right into the latest additions to test your skills.</p>
-        <div class="card-grid" style="gap: 1.5rem;">
+        <div class="card-grid" style="gap: 1.5rem; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));">
             <?php foreach ($recentQuizzes as $quiz): ?>
                 <div class="card" style="background: var(--bg-card); border-radius: var(--radius-md); border-color: rgba(212, 175, 55, 0.15); text-align: center;">
                     <div class="card-meta" style="color: var(--gold-primary); font-weight: 600; font-size: 0.8rem;"><?php echo htmlspecialchars($quiz['topic_title'] ?? 'General'); ?></div>
