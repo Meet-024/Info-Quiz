@@ -68,13 +68,19 @@ if ($topic_id > 0) {
                     
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <span style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-exchange-alt"></i> Switch Topic:</span>
-                        <select onchange="location = this.value;" class="topic-select-dropdown">
-                            <?php foreach ($all_topics as $ot): ?>
-                                <option value="info.php?topic=<?php echo $ot['id']; ?>" <?php echo $ot['id'] == $topic_id ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($ot['title']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="custom-dropdown">
+                            <button class="custom-dropdown-toggle">
+                                <span><?php echo htmlspecialchars($selected_topic['title']); ?></span>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </button>
+                            <div class="custom-dropdown-menu">
+                                <?php foreach ($all_topics as $ot): ?>
+                                    <a href="info.php?topic=<?php echo $ot['id']; ?>" class="custom-dropdown-item <?php echo $ot['id'] == $topic_id ? 'active' : ''; ?>">
+                                        <?php echo htmlspecialchars($ot['title']); ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
 

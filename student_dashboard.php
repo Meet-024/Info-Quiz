@@ -293,16 +293,22 @@ if ($view === 'results') {
                     
                     <div style="display: flex; align-items: center; gap: 0.75rem;">
                         <span style="color: var(--text-muted); font-size: 0.9rem;"><i class="fas fa-exchange-alt"></i> Switch Topic:</span>
-                        <select onchange="location = this.value;" class="topic-select-dropdown">
-                            <?php
-                            $other_topics = $pdo->query("SELECT id, title FROM topics ORDER BY title ASC")->fetchAll();
-                            foreach ($other_topics as $ot):
-                            ?>
-                                <option value="student_dashboard.php?view=info&topic=<?php echo $ot['id']; ?>" <?php echo $ot['id'] == $topic_id ? 'selected' : ''; ?>>
-                                    <?php echo htmlspecialchars($ot['title']); ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
+                        <div class="custom-dropdown">
+                            <button class="custom-dropdown-toggle">
+                                <span><?php echo htmlspecialchars($selected_topic['title']); ?></span>
+                                <i class="fas fa-chevron-down toggle-icon"></i>
+                            </button>
+                            <div class="custom-dropdown-menu">
+                                <?php
+                                $other_topics = $pdo->query("SELECT id, title FROM topics ORDER BY title ASC")->fetchAll();
+                                foreach ($other_topics as $ot):
+                                ?>
+                                    <a href="student_dashboard.php?view=info&topic=<?php echo $ot['id']; ?>" class="custom-dropdown-item <?php echo $ot['id'] == $topic_id ? 'active' : ''; ?>">
+                                        <?php echo htmlspecialchars($ot['title']); ?>
+                                    </a>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
