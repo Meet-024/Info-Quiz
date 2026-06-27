@@ -312,9 +312,7 @@ if ($view === 'results') {
                         <div class="glass-panel">
                             <div class="card-meta">Topic: <?php echo htmlspecialchars($item['topic_title'] ?? 'Uncategorized'); ?></div>
                             <h3 style="color: var(--gold-primary); margin-bottom: 1rem;"><?php echo htmlspecialchars($item['title']); ?></h3>
-                            <p style="margin-bottom: 1.5rem; color: var(--text-muted); font-size: 0.9rem;">
-                                Published: <?php echo date('M d, Y', strtotime($item['created_at'])); ?>
-                            </p>
+
                             <div class="article-content">
                                 <?php echo nl2br(htmlspecialchars($item['content'])); ?>
                             </div>
