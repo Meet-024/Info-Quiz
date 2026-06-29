@@ -17,6 +17,7 @@ Desktop.ini
 # Local Configuration
 config.local.php
 .env
+seed.php
 
 # Temporary / Log files
 *.log
