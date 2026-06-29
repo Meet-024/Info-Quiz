@@ -19,7 +19,6 @@ $quiz_count = $stmt->fetchColumn();
 $stmt = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'student'");
 $student_count = $stmt->fetchColumn();
 
-// Fetch teacher's 3 most recent posted articles
 $stmt = $pdo->prepare("SELECT i.*, t.title as topic_title FROM information i 
                        LEFT JOIN topics t ON i.topic_id = t.id 
                        WHERE i.created_by = ? 
@@ -27,7 +26,6 @@ $stmt = $pdo->prepare("SELECT i.*, t.title as topic_title FROM information i
 $stmt->execute([$user_id]);
 $recent_infos = $stmt->fetchAll();
 
-// Fetch teacher's 3 most recent quizzes with attempts count
 $stmt = $pdo->prepare("SELECT q.*, t.title as topic_title, 
                       (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
                       (SELECT COUNT(*) FROM quiz_results WHERE quiz_id = q.id) as attempts_count
@@ -38,7 +36,6 @@ $stmt = $pdo->prepare("SELECT q.*, t.title as topic_title,
 $stmt->execute([$user_id]);
 $recent_quizzes = $stmt->fetchAll();
 
-// Fetch latest student attempts on the quizzes created by this teacher
 $stmt = $pdo->prepare("SELECT r.*, u.username as student_name, q.title as quiz_title 
                        FROM quiz_results r 
                        JOIN quizzes q ON r.quiz_id = q.id 

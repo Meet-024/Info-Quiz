@@ -37,12 +37,13 @@ require_once 'includes/navbar.php';
 $topics = $pdo->query("SELECT * FROM topics")->fetchAll();
 
 
-$query = "SELECT i.*, t.title as topic_title FROM information i LEFT JOIN topics t ON i.topic_id = t.id";
 if (!$is_admin) {
-    $query .= " WHERE i.created_by = " . (int)$_SESSION['user_id'];
+    $stmt = $pdo->prepare("SELECT i.*, t.title as topic_title FROM information i LEFT JOIN topics t ON i.topic_id = t.id WHERE i.created_by = ? ORDER BY i.created_at DESC");
+    $stmt->execute([$_SESSION['user_id']]);
+} else {
+    $stmt = $pdo->query("SELECT i.*, t.title as topic_title FROM information i LEFT JOIN topics t ON i.topic_id = t.id ORDER BY i.created_at DESC");
 }
-$query .= " ORDER BY i.created_at DESC";
-$info = $pdo->query($query)->fetchAll();
+$info = $stmt->fetchAll();
 ?>
 
 <div class="main-container">

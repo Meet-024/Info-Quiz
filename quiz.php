@@ -13,17 +13,23 @@ require_once 'includes/navbar.php';
 
 $topic_id = isset($_GET['topic']) ? (int)$_GET['topic'] : 0;
 
-$query = "SELECT q.*, t.title as topic_title, u.username as author, 
-          (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
-          FROM quizzes q 
-          LEFT JOIN topics t ON q.topic_id = t.id 
-          LEFT JOIN users u ON q.created_by = u.id";
 if ($topic_id > 0) {
-    $query .= " WHERE q.topic_id = " . $topic_id;
+    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_title, u.username as author, 
+                           (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
+                           FROM quizzes q 
+                           LEFT JOIN topics t ON q.topic_id = t.id 
+                           LEFT JOIN users u ON q.created_by = u.id
+                           WHERE q.topic_id = ?
+                           ORDER BY q.created_at DESC");
+    $stmt->execute([$topic_id]);
+} else {
+    $stmt = $pdo->query("SELECT q.*, t.title as topic_title, u.username as author, 
+                         (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count
+                         FROM quizzes q 
+                         LEFT JOIN topics t ON q.topic_id = t.id 
+                         LEFT JOIN users u ON q.created_by = u.id
+                         ORDER BY q.created_at DESC");
 }
-$query .= " ORDER BY q.created_at DESC";
-
-$stmt = $pdo->query($query);
 $quizzes = $stmt->fetchAll();
 ?>
 

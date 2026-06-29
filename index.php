@@ -16,7 +16,6 @@ $pageTitle = 'Home';
 require_once 'includes/header.php';
 require_once 'includes/navbar.php';
 
-// Fetch Statistics
 $stmt = $pdo->query("SELECT COUNT(*) FROM users");
 $totalUsers = $stmt->fetchColumn();
 
@@ -26,11 +25,9 @@ $totalQuizzes = $stmt->fetchColumn();
 $stmt = $pdo->query("SELECT COUNT(*) FROM information");
 $totalInfo = $stmt->fetchColumn();
 
-// Fetch 4 recent quizzes
 $stmt = $pdo->query("SELECT q.*, t.title as topic_title FROM quizzes q LEFT JOIN topics t ON q.topic_id = t.id ORDER BY q.created_at DESC LIMIT 4");
 $recentQuizzes = $stmt->fetchAll();
 
-// Fetch 4 recent learning articles (content)
 $stmt = $pdo->query("SELECT i.*, t.title as topic_title FROM information i LEFT JOIN topics t ON i.topic_id = t.id ORDER BY i.created_at DESC LIMIT 4");
 $recentArticles = $stmt->fetchAll();
 ?>

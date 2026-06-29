@@ -16,14 +16,12 @@ $info_count = $stmt->fetchColumn();
 $stmt = $pdo->query("SELECT COUNT(*) FROM quizzes");
 $quiz_count = $stmt->fetchColumn();
 
-// Fetch 3 most recent articles (with author username)
 $stmt = $pdo->query("SELECT i.*, t.title as topic_title, u.username as author FROM information i 
                      LEFT JOIN topics t ON i.topic_id = t.id 
                      LEFT JOIN users u ON i.created_by = u.id 
                      ORDER BY i.created_at DESC LIMIT 3");
 $recent_infos = $stmt->fetchAll();
 
-// Fetch 3 most recent quizzes (with author username)
 $stmt = $pdo->query("SELECT q.*, t.title as topic_title, u.username as author, 
                      (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count 
                      FROM quizzes q 
@@ -32,7 +30,6 @@ $stmt = $pdo->query("SELECT q.*, t.title as topic_title, u.username as author,
                      ORDER BY q.created_at DESC LIMIT 3");
 $recent_quizzes = $stmt->fetchAll();
 
-// Fetch 3 most recent registered users
 $stmt = $pdo->query("SELECT id, username, role, created_at FROM users ORDER BY created_at DESC LIMIT 3");
 $recent_users = $stmt->fetchAll();
 ?>

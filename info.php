@@ -8,22 +8,20 @@ $topic_id = isset($_GET['topic']) ? (int)$_GET['topic'] : 0;
 $info_items = [];
 $selected_topic = null;
 
-// Fetch all topics for the directory view or quick-swapper tabs
 $all_topics = $pdo->query("SELECT * FROM topics ORDER BY title ASC")->fetchAll();
 
 if ($topic_id > 0) {
-    // Fetch selected topic details
     $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = ?");
     $stmt->execute([$topic_id]);
     $selected_topic = $stmt->fetch();
 
     if ($selected_topic) {
-        $query = "SELECT i.*, t.title as topic_title, u.username as author FROM information i 
-                  LEFT JOIN topics t ON i.topic_id = t.id 
-                  LEFT JOIN users u ON i.created_by = u.id
-                  WHERE i.topic_id = " . $topic_id . "
-                  ORDER BY i.created_at DESC";
-        $stmt = $pdo->query($query);
+        $stmt = $pdo->prepare("SELECT i.*, t.title as topic_title, u.username as author FROM information i 
+                               LEFT JOIN topics t ON i.topic_id = t.id 
+                               LEFT JOIN users u ON i.created_by = u.id
+                               WHERE i.topic_id = ?
+                               ORDER BY i.created_at DESC");
+        $stmt->execute([$topic_id]);
         $info_items = $stmt->fetchAll();
     }
 }

@@ -23,13 +23,11 @@ if ($view === 'results') {
     $selected_topic = null;
     $info_items = [];
     if ($topic_id > 0) {
-        // Fetch topic details
         $stmt = $pdo->prepare("SELECT * FROM topics WHERE id = ?");
         $stmt->execute([$topic_id]);
         $selected_topic = $stmt->fetch();
 
         if ($selected_topic) {
-            // Fetch articles for this topic
             $stmt = $pdo->prepare("SELECT i.*, u.username as author FROM information i 
                                    LEFT JOIN users u ON i.created_by = u.id
                                    WHERE i.topic_id = ?
@@ -39,7 +37,6 @@ if ($view === 'results') {
         }
     }
 } elseif ($view === 'overview') {
-    // Overview Stats
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM quiz_results WHERE user_id = ?");
     $stmt->execute([$user_id]);
     $total_quizzes = $stmt->fetchColumn();
@@ -50,10 +47,8 @@ if ($view === 'results') {
     $avg_score = $scores['avg_score'] ? round($scores['avg_score'], 1) : 0;
     $max_score = $scores['max_score'] ? round($scores['max_score'], 1) : 0;
 
-    // Fetch All Topics
     $all_topics = $pdo->query("SELECT * FROM topics ORDER BY title ASC")->fetchAll();
 
-    // Fetch All Quizzes with question count and student's personal best score
     $stmt = $pdo->prepare("SELECT q.*, t.title as topic_title, 
                           (SELECT COUNT(*) FROM questions WHERE quiz_id = q.id) as question_count,
                           (SELECT MAX(score/total_questions * 100) FROM quiz_results WHERE user_id = ? AND quiz_id = q.id) as best_score
@@ -63,7 +58,6 @@ if ($view === 'results') {
     $stmt->execute([$user_id]);
     $all_quizzes = $stmt->fetchAll();
 
-    // Recent attempts log
     $stmt = $pdo->prepare("SELECT r.*, q.title as quiz_title, t.title as topic_title 
                            FROM quiz_results r
                            JOIN quizzes q ON r.quiz_id = q.id

@@ -55,12 +55,13 @@ require_once 'includes/navbar.php';
 
 $topics = $pdo->query("SELECT * FROM topics")->fetchAll();
 
-$query = "SELECT q.*, t.title as topic_title FROM quizzes q LEFT JOIN topics t ON q.topic_id = t.id";
 if (!$is_admin) {
-    $query .= " WHERE q.created_by = " . (int)$_SESSION['user_id'];
+    $stmt = $pdo->prepare("SELECT q.*, t.title as topic_title FROM quizzes q LEFT JOIN topics t ON q.topic_id = t.id WHERE q.created_by = ? ORDER BY q.created_at DESC");
+    $stmt->execute([$_SESSION['user_id']]);
+} else {
+    $stmt = $pdo->query("SELECT q.*, t.title as topic_title FROM quizzes q LEFT JOIN topics t ON q.topic_id = t.id ORDER BY q.created_at DESC");
 }
-$query .= " ORDER BY q.created_at DESC";
-$quizzes = $pdo->query($query)->fetchAll();
+$quizzes = $stmt->fetchAll();
 
 
 $manage_quiz = null;
