@@ -34,7 +34,7 @@ InfoQuiz is a modern, responsive, and secure web-based quiz and interactive lear
 2. **Move to Web Directory**: Copy or clone the project folder into your server directory (e.g., `htdocs` for XAMPP).
 3. **Database Configuration**:
    * Create a MySQL database named `info_quiz_db`.
-   * Import the database structure and initial seed data by running the setup or executing the sql statements from `seed.php`.
+   * Import the database structure by executing the SQL statements from [database.sql](file:///database.sql).
    * Configure your database host, username, and password in [config/db.php](file:///config/db.php).
 4. **Run Application**:
    * Start Apache and MySQL services (e.g., via XAMPP Control Panel).
